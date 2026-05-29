@@ -1,0 +1,6 @@
+open database "humanlang_demo.db" as database
+run sql "CREATE TABLE IF NOT EXISTS users(name TEXT)" on database
+run sql "INSERT INTO users(name) VALUES ('Steven')" on database
+query sql "SELECT name FROM users" on database as rows
+say rows
+

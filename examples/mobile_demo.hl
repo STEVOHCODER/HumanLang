@@ -1,0 +1,5 @@
+create mobile app "HumanLang Mobile Demo" as mobile app
+add mobile screen "Home" to mobile app
+add mobile screen "Settings" to mobile app
+save mobile app mobile app to folder "humanlang_mobile_demo"
+

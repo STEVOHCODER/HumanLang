@@ -41,6 +41,21 @@ WHILE_RE = re.compile(
     re.IGNORECASE,
 )
 WAIT_RE = re.compile(r"^wait\s+(?P<seconds>.+)\s+seconds?$", re.IGNORECASE)
+OPEN_WINDOW_RE = re.compile(r'^open\s+window\s+"(?P<title>.+)"\s+size\s+(?P<width>.+?)\s+by\s+(?P<height>.+)$', re.IGNORECASE)
+ADD_TEXT_WINDOW_RE = re.compile(r'^add\s+text\s+(?P<value>.+)\s+to\s+window$', re.IGNORECASE)
+ADD_BUTTON_WINDOW_RE = re.compile(r'^add\s+button\s+"(?P<label>.+)"\s+to\s+window$', re.IGNORECASE)
+WEB_PAGE_RE = re.compile(rf'^create\s+web\s+page\s+"(?P<title>.+)"\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
+WEB_HEADING_RE = re.compile(r'^add\s+heading\s+(?P<value>.+)\s+to\s+(?P<name>.+)$', re.IGNORECASE)
+WEB_PARAGRAPH_RE = re.compile(r'^add\s+paragraph\s+(?P<value>.+)\s+to\s+(?P<name>.+)$', re.IGNORECASE)
+SAVE_WEB_PAGE_RE = re.compile(r'^save\s+web\s+page\s+(?P<name>.+)\s+to\s+file\s+"(?P<path>.+)"$', re.IGNORECASE)
+OPEN_DATABASE_RE = re.compile(rf'^open\s+database\s+"(?P<path>.+)"\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
+RUN_SQL_RE = re.compile(r'^run\s+sql\s+"(?P<sql>.+)"\s+on\s+(?P<name>.+)$', re.IGNORECASE)
+QUERY_SQL_RE = re.compile(rf'^query\s+sql\s+"(?P<sql>.+)"\s+on\s+(?P<database>.+)\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
+OPEN_GAME_RE = re.compile(r'^open\s+game\s+screen\s+"(?P<title>.+)"\s+size\s+(?P<width>.+?)\s+by\s+(?P<height>.+)$', re.IGNORECASE)
+DRAW_CUBE_RE = re.compile(r'^draw\s+cube\s+at\s+x\s+(?P<x>.+?)\s+y\s+(?P<y>.+?)\s+size\s+(?P<size>.+)$', re.IGNORECASE)
+MOBILE_APP_RE = re.compile(rf'^create\s+mobile\s+app\s+"(?P<title>.+)"\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
+MOBILE_SCREEN_RE = re.compile(r'^add\s+mobile\s+screen\s+"(?P<title>.+)"\s+to\s+(?P<name>.+)$', re.IGNORECASE)
+SAVE_MOBILE_RE = re.compile(r'^save\s+mobile\s+app\s+(?P<name>.+)\s+to\s+folder\s+"(?P<path>.+)"$', re.IGNORECASE)
 
 
 MATH_FUNCTIONS = {
@@ -495,6 +510,104 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         name = remember_name(variables, ask_match.group("name"))
         return f'{indent}{name} = input("{question} ")'
 
+    open_window_match = OPEN_WINDOW_RE.match(stripped)
+    if open_window_match:
+        title = open_window_match.group("title")
+        width = translate_expression(open_window_match.group("width"), variables)
+        height = translate_expression(open_window_match.group("height"), variables)
+        return f'{indent}_human_open_window("{title}", {width}, {height})'
+
+    add_text_window_match = ADD_TEXT_WINDOW_RE.match(stripped)
+    if add_text_window_match:
+        value = translate_expression(add_text_window_match.group("value"), variables)
+        return f"{indent}_human_add_text_to_window({value})"
+
+    add_button_window_match = ADD_BUTTON_WINDOW_RE.match(stripped)
+    if add_button_window_match:
+        label = add_button_window_match.group("label")
+        return f'{indent}_human_add_button_to_window("{label}")'
+
+    if lowered == "show window":
+        return f"{indent}_human_show_window()"
+
+    web_page_match = WEB_PAGE_RE.match(stripped)
+    if web_page_match:
+        name = remember_name(variables, web_page_match.group("name"))
+        title = web_page_match.group("title")
+        return f'{indent}{name} = _human_web_page("{title}")'
+
+    web_heading_match = WEB_HEADING_RE.match(stripped)
+    if web_heading_match:
+        name = translate_expression(web_heading_match.group("name"), variables)
+        value = translate_expression(web_heading_match.group("value"), variables)
+        return f'{indent}{name}["body"].append("<h1>" + html.escape(str({value})) + "</h1>")'
+
+    web_paragraph_match = WEB_PARAGRAPH_RE.match(stripped)
+    if web_paragraph_match:
+        name = translate_expression(web_paragraph_match.group("name"), variables)
+        value = translate_expression(web_paragraph_match.group("value"), variables)
+        return f'{indent}{name}["body"].append("<p>" + html.escape(str({value})) + "</p>")'
+
+    save_web_page_match = SAVE_WEB_PAGE_RE.match(stripped)
+    if save_web_page_match:
+        name = translate_expression(save_web_page_match.group("name"), variables)
+        path = save_web_page_match.group("path")
+        return f'{indent}_human_save_web_page({name}, "{path}")'
+
+    open_database_match = OPEN_DATABASE_RE.match(stripped)
+    if open_database_match:
+        name = remember_name(variables, open_database_match.group("name"))
+        path = open_database_match.group("path")
+        return f'{indent}{name} = sqlite3.connect("{path}")'
+
+    run_sql_match = RUN_SQL_RE.match(stripped)
+    if run_sql_match:
+        name = translate_expression(run_sql_match.group("name"), variables)
+        sql = run_sql_match.group("sql")
+        return f'{indent}{name}.execute("""{sql}""")\n{indent}{name}.commit()'
+
+    query_sql_match = QUERY_SQL_RE.match(stripped)
+    if query_sql_match:
+        database = translate_expression(query_sql_match.group("database"), variables)
+        name = remember_name(variables, query_sql_match.group("name"))
+        sql = query_sql_match.group("sql")
+        return f'{indent}{name} = {database}.execute("""{sql}""").fetchall()'
+
+    open_game_match = OPEN_GAME_RE.match(stripped)
+    if open_game_match:
+        title = open_game_match.group("title")
+        width = translate_expression(open_game_match.group("width"), variables)
+        height = translate_expression(open_game_match.group("height"), variables)
+        return f'{indent}_human_open_game_screen("{title}", {width}, {height})'
+
+    draw_cube_match = DRAW_CUBE_RE.match(stripped)
+    if draw_cube_match:
+        x = translate_expression(draw_cube_match.group("x"), variables)
+        y = translate_expression(draw_cube_match.group("y"), variables)
+        size = translate_expression(draw_cube_match.group("size"), variables)
+        return f"{indent}_human_draw_cube({x}, {y}, {size})"
+
+    if lowered == "show game":
+        return f"{indent}_human_show_game()"
+
+    mobile_app_match = MOBILE_APP_RE.match(stripped)
+    if mobile_app_match:
+        name = remember_name(variables, mobile_app_match.group("name"))
+        title = mobile_app_match.group("title")
+        return f'{indent}{name} = _human_mobile_app("{title}")'
+
+    mobile_screen_match = MOBILE_SCREEN_RE.match(stripped)
+    if mobile_screen_match:
+        name = translate_expression(mobile_screen_match.group("name"), variables)
+        title = mobile_screen_match.group("title")
+        return f'{indent}{name}["screens"].append("{title}")'
+
+    save_mobile_match = SAVE_MOBILE_RE.match(stripped)
+    if save_mobile_match:
+        name = translate_expression(save_mobile_match.group("name"), variables)
+        path = save_mobile_match.group("path")
+        return f'{indent}_human_save_mobile_app({name}, "{path}")'
+
     list_match = LIST_RE.match(stripped)
     if list_match:
         items = [
@@ -701,9 +814,12 @@ def translate(source: str, source_path: Path | None = None) -> str:
     variables: dict[str, str] = {}
     python_lines = [translate_line(line, index + 1, variables) for index, line in enumerate(lines)]
     header = '''import datetime
+import html
+import json
 import math
 import random
 import os
+import sqlite3
 import sys
 import time
 import urllib.request
@@ -721,6 +837,108 @@ def _human_number_input(prompt):
             return float(value)
         except ValueError:
             print("Please enter a valid number.")
+
+_human_window = None
+_human_game_screen = None
+_human_turtle = None
+
+
+def _human_open_window(title, width, height):
+    global _human_window
+    import tkinter as tk
+    _human_window = tk.Tk()
+    _human_window.title(title)
+    _human_window.geometry(f"{int(width)}x{int(height)}")
+
+
+def _human_add_text_to_window(value):
+    import tkinter as tk
+    if _human_window is None:
+        raise RuntimeError("Open a window before adding text.")
+    tk.Label(_human_window, text=str(value), padx=12, pady=8).pack()
+
+
+def _human_add_button_to_window(label):
+    import tkinter as tk
+    if _human_window is None:
+        raise RuntimeError("Open a window before adding a button.")
+    tk.Button(_human_window, text=label, command=_human_window.destroy, padx=12, pady=8).pack()
+
+
+def _human_show_window():
+    if _human_window is None:
+        raise RuntimeError("Open a window before showing it.")
+    _human_window.mainloop()
+
+
+def _human_web_page(title):
+    return {"title": title, "body": []}
+
+
+def _human_save_web_page(page, path):
+    title = html.escape(str(page["title"]))
+    body = "\\n".join(page["body"])
+    document = f"<!doctype html>\\n<html>\\n<head><meta charset=\\"utf-8\\"><title>{title}</title></head>\\n<body>\\n{body}\\n</body>\\n</html>\\n"
+    Path(path).write_text(document, encoding="utf-8")
+
+
+def _human_open_game_screen(title, width, height):
+    global _human_game_screen, _human_turtle
+    import turtle
+    _human_game_screen = turtle.Screen()
+    _human_game_screen.title(title)
+    _human_game_screen.setup(int(width), int(height))
+    _human_turtle = turtle.Turtle()
+    _human_turtle.speed(0)
+
+
+def _human_draw_cube(x, y, size):
+    if _human_turtle is None:
+        raise RuntimeError("Open a game screen before drawing.")
+    turtle = _human_turtle
+    x = float(x)
+    y = float(y)
+    size = float(size)
+    offset = size / 3
+    front = [(x, y), (x + size, y), (x + size, y + size), (x, y + size), (x, y)]
+    back = [(px + offset, py + offset) for px, py in front]
+    turtle.penup()
+    for shape in (front, back):
+        turtle.goto(*shape[0])
+        turtle.pendown()
+        for point in shape[1:]:
+            turtle.goto(*point)
+        turtle.penup()
+    for start, end in zip(front[:-1], back[:-1]):
+        turtle.goto(*start)
+        turtle.pendown()
+        turtle.goto(*end)
+        turtle.penup()
+
+
+def _human_show_game():
+    if _human_game_screen is None:
+        raise RuntimeError("Open a game screen before showing it.")
+    _human_game_screen.mainloop()
+
+
+def _human_mobile_app(title):
+    return {"title": title, "screens": []}
+
+
+def _human_save_mobile_app(app, folder):
+    folder_path = Path(folder)
+    folder_path.mkdir(parents=True, exist_ok=True)
+    title = html.escape(str(app["title"]))
+    screens = "\\n".join(f"<section><h2>{html.escape(str(screen))}</h2></section>" for screen in app["screens"])
+    (folder_path / "index.html").write_text(
+        f"<!doctype html><html><head><meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1\\"><title>{title}</title></head><body><h1>{title}</h1>{screens}</body></html>",
+        encoding="utf-8",
+    )
+    (folder_path / "manifest.json").write_text(
+        json.dumps({"name": str(app["title"]), "display": "standalone", "start_url": "index.html"}, indent=2),
+        encoding="utf-8",
+    )
 
 '''
     return header + "\n".join(python_lines) + "\n"

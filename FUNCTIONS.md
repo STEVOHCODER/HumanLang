@@ -267,15 +267,57 @@ use "math_helpers.hl"
 double number with 21
 ```
 
+## Desktop GUI
+
+```humanlang
+open window "HumanLang GUI" size 400 by 250
+add text "Hello from a desktop GUI" to window
+add button "Close" to window
+show window
+```
+
+## Web Pages
+
+```humanlang
+create web page "Home" as page
+add heading "Welcome" to page
+add paragraph "Generated from HumanLang." to page
+save web page page to file "index.html"
+```
+
+## Databases
+
+```humanlang
+open database "app.db" as database
+run sql "CREATE TABLE IF NOT EXISTS users(name TEXT)" on database
+run sql "INSERT INTO users(name) VALUES ('Steven')" on database
+query sql "SELECT name FROM users" on database as rows
+say rows
+```
+
+## Game And 3D Starter
+
+```humanlang
+open game screen "Cube" size 600 by 400
+draw cube at x -40 y -40 size 100
+show game
+```
+
+## Mobile App Scaffold
+
+```humanlang
+create mobile app "Demo Mobile" as mobile app
+add mobile screen "Home" to mobile app
+save mobile app mobile app to folder "mobile_demo"
+```
+
 ## Not Yet Supported
 
-HumanLang is still a minimal command-line scripting language. It does not yet support:
+HumanLang is still a minimal language. It now has starter support for desktop GUI windows, static web pages, SQLite databases, lightweight mobile/PWA scaffolds, and simple game/3D-style drawing, but it does not yet support:
 
-- Desktop GUI apps
-- Mobile apps
-- Web apps with pages
-- Databases
 - Advanced error handling
 - Packages published directly on PyPI
 - Real compiler to Rust, C++, Go, or Rux
-- 3D graphics or game engine features
+- Full native mobile apps
+- Dynamic web servers with routes/templates
+- Full 3D engines or advanced game physics

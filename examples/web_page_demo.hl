@@ -1,0 +1,5 @@
+create web page "HumanLang Web Page" as page
+add heading "Welcome to HumanLang" to page
+add paragraph "This HTML page was generated from English-like code." to page
+save web page page to file "humanlang_page.html"
+

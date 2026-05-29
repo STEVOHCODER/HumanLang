@@ -146,6 +146,11 @@ humanlang run examples\modules_demo.hl
 humanlang run examples\safety_and_control.hl
 humanlang run examples\arguments_demo.hl hello
 humanlang run examples\minimal_checklist.hl
+humanlang run examples\gui_demo.hl
+humanlang run examples\web_page_demo.hl
+humanlang run examples\database_demo.hl
+humanlang run examples\game_3d_demo.hl
+humanlang run examples\mobile_demo.hl
 ```
 
 ## Current HumanLang Rules
@@ -229,21 +234,33 @@ humanlang run examples\minimal_checklist.hl
 | `text of 456` | convert value to text |
 | `try:` / `if error:` | handle errors |
 | `use "helpers.hl"` | import another HumanLang file |
+| `open window "Demo" size 400 by 300` | opens a desktop GUI window |
+| `add text "Hello" to window` | adds text to the GUI window |
+| `add button "Close" to window` | adds a close button |
+| `create web page "Home" as page` | starts a static HTML page |
+| `add heading "Welcome" to page` | adds a heading to a web page |
+| `add paragraph "Text" to page` | adds paragraph text |
+| `save web page page to file "index.html"` | writes an HTML file |
+| `open database "app.db" as database` | opens a SQLite database |
+| `run sql "..." on database` | runs SQL |
+| `query sql "..." on database as rows` | reads SQL rows |
+| `open game screen "Game" size 600 by 400` | opens a simple drawing/game screen |
+| `draw cube at x 0 y 0 size 80` | draws a simple 3D-style cube |
+| `create mobile app "Demo" as mobile app` | creates a lightweight mobile/PWA scaffold |
+| `save mobile app mobile app to folder "demo"` | writes mobile scaffold files |
 
 See [FUNCTIONS.md](FUNCTIONS.md) for a full example of every current HumanLang feature.
 
 ## Not Yet Supported
 
-HumanLang is still a minimal command-line scripting language. It does not yet support:
+HumanLang is still a minimal language. It now has starter support for desktop GUI windows, static web pages, SQLite databases, lightweight mobile/PWA scaffolds, and simple game/3D-style drawing, but it does not yet support:
 
-- Desktop GUI apps
-- Mobile apps
-- Web apps with pages
-- Databases
 - Advanced error handling
 - Packages published directly on PyPI
 - Real compiler to Rust, C++, Go, or Rux
-- 3D graphics or game engine features
+- Full native mobile apps
+- Dynamic web servers with routes/templates
+- Full 3D engines or advanced game physics
 
 ## Goal
 

@@ -5,29 +5,7 @@ from tempfile import TemporaryDirectory
 from humanlang import read_source_file, translate
 
 
-HEADER = '''import datetime
-import math
-import random
-import os
-import sys
-import time
-import urllib.request
-from pathlib import Path
-
-
-def _human_text(*values):
-    return "".join(str(value) for value in values)
-
-
-def _human_number_input(prompt):
-    while True:
-        value = input(prompt)
-        try:
-            return float(value)
-        except ValueError:
-            print("Please enter a valid number.")
-
-'''
+HEADER = translate("").removesuffix("\n")
 
 
 class TranslatorTests(unittest.TestCase):
@@ -299,6 +277,54 @@ response_text = urllib.request.urlopen("https://example.com", timeout=30).read()
 os.system("cls" if os.name == "nt" else "clear")
 sys.exit(0)
 sys.exit(0)
+''')
+
+    def test_translates_app_platform_starters(self):
+        source = '''open window "Demo" size 400 by 300
+add text "Hello GUI" to window
+add button "Close" to window
+show window
+
+create web page "Home" as page
+add heading "Welcome" to page
+add paragraph "Hello web" to page
+save web page page to file "index.html"
+
+open database "app.db" as database
+run sql "CREATE TABLE IF NOT EXISTS users(name TEXT)" on database
+query sql "SELECT name FROM users" on database as rows
+
+open game screen "Cube" size 500 by 400
+draw cube at x 0 y 0 size 80
+show game
+
+create mobile app "Demo Mobile" as mobile app
+add mobile screen "Home" to mobile app
+save mobile app mobile app to folder "mobile_demo"
+'''
+
+        self.assertEqual(translate(source), HEADER + '''_human_open_window("Demo", 400, 300)
+_human_add_text_to_window("Hello GUI")
+_human_add_button_to_window("Close")
+_human_show_window()
+
+page = _human_web_page("Home")
+page["body"].append("<h1>" + html.escape(str("Welcome")) + "</h1>")
+page["body"].append("<p>" + html.escape(str("Hello web")) + "</p>")
+_human_save_web_page(page, "index.html")
+
+database = sqlite3.connect("app.db")
+database.execute("""CREATE TABLE IF NOT EXISTS users(name TEXT)""")
+database.commit()
+rows = database.execute("""SELECT name FROM users""").fetchall()
+
+_human_open_game_screen("Cube", 500, 400)
+_human_draw_cube(0, 0, 80)
+_human_show_game()
+
+mobile_app = _human_mobile_app("Demo Mobile")
+mobile_app["screens"].append("Home")
+_human_save_mobile_app(mobile_app, "mobile_demo")
 ''')
 
 

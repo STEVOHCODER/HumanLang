@@ -1,0 +1,5 @@
+open window "HumanLang GUI" size 400 by 250
+add text "Hello from a desktop GUI" to window
+add button "Close" to window
+show window
+

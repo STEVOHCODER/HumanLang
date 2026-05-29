@@ -1,0 +1,4 @@
+open game screen "HumanLang Cube" size 600 by 400
+draw cube at x -40 y -40 size 100
+show game
+
