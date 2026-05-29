@@ -1,0 +1,25 @@
+say "HumanLang science demo"
+
+remember pi as circle_ratio
+remember 16 as number
+
+calculate the square root of number as root
+calculate 2 to the power of 10 as binary_size
+calculate the sine of radians of 90 as sine_of_90
+calculate the log of 1000 as log_value
+
+say "Pi is:"
+say circle_ratio
+
+say "Square root:"
+say root
+
+say "2 to the power of 10:"
+say binary_size
+
+say "Sine of 90 degrees:"
+say sine_of_90
+
+say "Log base 10 of 1000:"
+say log_value
+

@@ -1,0 +1,5 @@
+say number "enter the first_number " and remember it as first_number
+
+say number "enter the second_number " and remember it as the second_number
+
+calculate first_number plus second_number as addition,

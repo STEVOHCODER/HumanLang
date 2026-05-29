@@ -1,0 +1,9 @@
+ask number "enter the first number " and remember it as a first number
+
+ask number "enter the second number " and remember it as a second number
+
+calculate first number plus second number as addition
+
+say "The answer is:"
+say addition
+

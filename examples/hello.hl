@@ -1,0 +1,10 @@
+ask "What is your name?" and remember it as name
+remember 20 as age
+
+say "Hello " plus name
+
+if age is at least 18:
+    say "You are an adult"
+otherwise:
+    say "You are not an adult"
+

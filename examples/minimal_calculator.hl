@@ -1,0 +1,23 @@
+say "HumanLang minimal calculator"
+
+ask number "Enter the first number:" and remember it as first number
+ask number "Enter the second number:" and remember it as second number
+
+say "Addition"
+calculate first number plus second number
+
+say "Subtraction"
+calculate first number minus second number
+
+say "Multiplication"
+calculate first number times second number
+
+say "Division"
+calculate first number divided by second number
+
+say "Power"
+calculate first number to the power of second number
+
+say "Average"
+calculate average of first number and second number
+

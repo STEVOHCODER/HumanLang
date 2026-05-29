@@ -1,0 +1,42 @@
+say "HumanLang Scientific Calculator"
+
+ask number "Enter the first number:" and remember it as first_number
+ask number "Enter the second number:" and remember it as second_number
+
+calculate first_number plus second_number as addition
+calculate first_number minus second_number as subtraction
+calculate first_number times second_number as multiplication
+calculate first_number divided by second_number as division
+calculate first_number to the power of second_number as power
+calculate the square root of first_number as root
+calculate the sine of radians of first_number as sine_value
+calculate the cosine of radians of first_number as cosine_value
+calculate the log of first_number as base_ten_log
+
+say "Addition:"
+say addition
+
+say "Subtraction:"
+say subtraction
+
+say "Multiplication:"
+say multiplication
+
+say "Division:"
+say division
+
+say "Power:"
+say power
+
+say "Square root of first number:"
+say root
+
+say "Sine of first number in degrees:"
+say sine_value
+
+say "Cosine of first number in degrees:"
+say cosine_value
+
+say "Base 10 log of first number:"
+say base_ten_log
+

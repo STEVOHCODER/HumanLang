@@ -1,0 +1,4 @@
+ask number "what is the first_number " and remember it as the first_number
+
+ask number "enter the second_number" and remember it as the second_number 
+calculate first_number plus second_number

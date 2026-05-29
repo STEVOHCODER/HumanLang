@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "humanlang"
+version = "0.1.0"
+description = "HumanLang: write simple programs in normal English."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "HumanLang" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Compilers",
+]
+
+[project.scripts]
+humanlang = "humanlang:main"
+hl = "humanlang:main"
+
+[tool.setuptools]
+py-modules = ["humanlang"]
+

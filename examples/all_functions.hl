@@ -1,0 +1,48 @@
+// HumanLang all functions example
+
+say "1. Text output"
+say "Hello from HumanLang"
+show "Show also prints text"
+print "Print also works"
+
+say "2. Remember values"
+remember 10 as first number
+remember 4 as second number
+remember "Steven" as user name
+
+say "3. Basic math"
+calculate first number plus second number as addition,
+calculate first number minus second number as subtraction,
+calculate first number times second number as multiplication,
+calculate first number divided by second number as division,
+calculate first number modulo second number as remainder,
+calculate first number to the power of second number as power,
+
+say "4. Scientific math"
+calculate the square root of first number as root,
+calculate the sine of radians of 90 as sine value,
+calculate the cosine of radians of 0 as cosine value,
+calculate the tangent of radians of 45 as tangent value,
+calculate the log of 1000 as base ten log,
+calculate the natural log of e as natural log,
+calculate the absolute value of -10 as positive value,
+calculate the floor of 4.9 as floor value,
+calculate the ceiling of 4.1 as ceiling value,
+calculate the factorial of 5 as factorial value,
+calculate the rounded value of 4.7 as rounded value,
+
+say "5. Useful calculator helpers"
+calculate average of first number and second number as average value,
+calculate the maximum of first number and second number as biggest value,
+calculate the minimum of first number and second number as smallest value,
+calculate 10 percent of first number as percent value,
+
+say "6. Conditions"
+if first number is greater than second number:
+    say "First number is bigger"
+otherwise:
+    say "Second number is bigger or equal"
+
+say "7. Repeat"
+repeat 3 times:
+    say "HumanLang can repeat"

@@ -1,0 +1,6 @@
+remember 10 as first_number
+remember 5 as second_number
+
+say "HumanLang can calculate:"
+say first_number plus second_number
+

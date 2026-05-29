@@ -1,0 +1,36 @@
+{
+  "name": "humanlang-language",
+  "displayName": "HumanLang Language",
+  "description": "Syntax highlighting for HumanLang .hl files.",
+  "version": "0.1.0",
+  "publisher": "humanlang",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "humanlang",
+        "aliases": [
+          "HumanLang",
+          "humanlang"
+        ],
+        "extensions": [
+          ".hl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "humanlang",
+        "scopeName": "source.humanlang",
+        "path": "./syntaxes/humanlang.tmLanguage.json"
+      }
+    ]
+  }
+}
+
