@@ -7,6 +7,8 @@ from pathlib import Path
 
 
 HUMAN_NAME = r"[A-Za-z_][A-Za-z0-9_]*(?:\s+[A-Za-z0-9_]+)*"
+FUNCTION_NAME = r"[A-Za-z_][A-Za-z0-9_]*(?:\s+(?!with\b)[A-Za-z0-9_]+)*"
+VALUE_PATTERN = r'"[^"]*"|[^,\s]+(?:\s+[^,\s]+)*?'
 ASK_RE = re.compile(rf'^(?:ask|get)\s+"(?P<question>.*)"\s+and\s+remember\s+it\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
 ASK_NUMBER_RE = re.compile(rf'^(?:ask|get|say)\s+number\s+"(?P<question>.*)"\s+and\s+remember\s+it\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
 REMEMBER_RE = re.compile(rf"^remember\s+(?P<value>.+)\s+as\s+(?P<name>{HUMAN_NAME})$", re.IGNORECASE)
@@ -20,8 +22,19 @@ FOR_EACH_RE = re.compile(rf"^for\s+each\s+(?P<item>{HUMAN_NAME})\s+in\s+(?P<item
 READ_FILE_RE = re.compile(rf'^read\s+file\s+"(?P<path>.+)"\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
 WRITE_FILE_RE = re.compile(r'^write\s+(?P<value>.+)\s+to\s+file\s+"(?P<path>.+)"$', re.IGNORECASE)
 APPEND_FILE_RE = re.compile(r'^append\s+(?P<value>.+)\s+to\s+file\s+"(?P<path>.+)"$', re.IGNORECASE)
+FUNCTION_DEF_RE = re.compile(rf"^to\s+(?P<name>{FUNCTION_NAME})(?:\s+with\s+(?P<params>.+))?:$", re.IGNORECASE)
+FUNCTION_CALL_RE = re.compile(rf"^(?P<name>{FUNCTION_NAME})(?:\s+with\s+(?P<args>.+))?$", re.IGNORECASE)
+MAP_RE = re.compile(rf"^(?:make|create|remember)\s+map\s+(?P<items>.+)\s+as\s+(?P<name>{HUMAN_NAME})$", re.IGNORECASE)
+MAP_GET_RE = re.compile(r"^(?P<name>.+?)'s\s+\"(?P<key>.+)\"$", re.IGNORECASE)
+SPLIT_RE = re.compile(rf'^split\s+(?P<value>.+)\s+by\s+"(?P<separator>.*)"\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
+REPLACE_RE = re.compile(r'^replace\s+"(?P<old>.*)"\s+with\s+"(?P<new>.*)"\s+in\s+(?P<value>.+)$', re.IGNORECASE)
+USE_RE = re.compile(r'^use\s+"(?P<path>.+\.hl)"$', re.IGNORECASE)
 IF_RE = re.compile(
     r"^if\s+(?P<left>.+?)\s+(?P<operator>is at least|is at most|is greater than|is less than|is not|is|equals|does not equal)\s+(?P<right>.+):$",
+    re.IGNORECASE,
+)
+WHILE_RE = re.compile(
+    r"^while\s+(?P<left>.+?)\s+(?P<operator>is at least|is at most|is greater than|is less than|is not|is|equals|does not equal)\s+(?P<right>.+):$",
     re.IGNORECASE,
 )
 
@@ -82,6 +95,39 @@ def remember_name(variables: dict[str, str], name: str) -> str:
     return normalized
 
 
+def split_human_args(text: str) -> list[str]:
+    if not text:
+        return []
+
+    parts = []
+    current = []
+    in_quote = False
+    index = 0
+
+    while index < len(text):
+        character = text[index]
+
+        if character == '"' and (index == 0 or text[index - 1] != "\\"):
+            in_quote = not in_quote
+            current.append(character)
+        elif not in_quote and character == ",":
+            parts.append("".join(current).strip())
+            current = []
+        elif not in_quote and text[index : index + 5].lower() == " and ":
+            parts.append("".join(current).strip())
+            current = []
+            index += 4
+        else:
+            current.append(character)
+
+        index += 1
+
+    if current:
+        parts.append("".join(current).strip())
+
+    return [part for part in parts if part]
+
+
 def split_quoted_text(expression: str) -> list[tuple[str, bool]]:
     parts = []
     current = []
@@ -118,7 +164,18 @@ def replace_known_names(expression: str, variables: dict[str, str]) -> str:
     return expression
 
 
+def translate_map_access(expression: str, variables: dict[str, str]) -> str:
+    match = MAP_GET_RE.match(expression.strip())
+    if not match:
+        return expression
+
+    name = translate_expression(match.group("name"), variables)
+    key = match.group("key")
+    return f'{name}["{key}"]'
+
+
 def translate_code_words(expression: str, variables: dict[str, str]) -> str:
+    expression = translate_map_access(expression, variables)
     expression = replace_known_names(expression, variables)
     expression = re.sub(
         r"\b(.+?)\s+percent\s+of\s+(.+)\b",
@@ -135,12 +192,18 @@ def translate_code_words(expression: str, variables: dict[str, str]) -> str:
     expression = re.sub(r"\bmultiplied by\b", "*", expression, flags=re.IGNORECASE)
     expression = re.sub(r"\bdivided by\b", "/", expression, flags=re.IGNORECASE)
     expression = re.sub(r"\bmodulo\b", "%", expression, flags=re.IGNORECASE)
+    expression = re.sub(r"\band\b", "and", expression, flags=re.IGNORECASE)
+    expression = re.sub(r"\bor\b", "or", expression, flags=re.IGNORECASE)
     return expression
 
 
 def translate_expression(expression: str, variables: dict[str, str]) -> str:
     expression = expression.strip().rstrip(",")
     lowered = expression.lower()
+
+    map_access_match = MAP_GET_RE.match(expression)
+    if map_access_match:
+        return translate_map_access(expression, variables)
 
     if lowered == "current date":
         return "datetime.date.today().isoformat()"
@@ -150,6 +213,40 @@ def translate_expression(expression: str, variables: dict[str, str]) -> str:
 
     if lowered == "current datetime":
         return "datetime.datetime.now().isoformat(timespec='seconds')"
+
+    if lowered == "true":
+        return "True"
+
+    if lowered == "false":
+        return "False"
+
+    if lowered == "nothing":
+        return "None"
+
+    if lowered.startswith("number of "):
+        value = expression[len("number of ") :].strip()
+        return f"float({translate_expression(value, variables)})"
+
+    if lowered.startswith("integer of "):
+        value = expression[len("integer of ") :].strip()
+        return f"int({translate_expression(value, variables)})"
+
+    if lowered.startswith("text of "):
+        value = expression[len("text of ") :].strip()
+        return f"str({translate_expression(value, variables)})"
+
+    if lowered.startswith("lowercase of "):
+        value = expression[len("lowercase of ") :].strip()
+        return f"{translate_expression(value, variables)}.lower()"
+
+    if lowered.startswith("uppercase of "):
+        value = expression[len("uppercase of ") :].strip()
+        return f"{translate_expression(value, variables)}.upper()"
+
+    replace_match = REPLACE_RE.match(expression)
+    if replace_match:
+        value = translate_expression(replace_match.group("value"), variables)
+        return f'{value}.replace("{replace_match.group("old")}", "{replace_match.group("new")}")'
 
     if lowered.startswith("length of "):
         value = expression[len("length of ") :].strip()
@@ -215,6 +312,37 @@ def translate_condition(left: str, operator: str, right: str, variables: dict[st
     return f"{translate_expression(left, variables)} {operators[operator.lower()]} {translate_expression(right, variables)}"
 
 
+def translate_compound_condition(condition: str, variables: dict[str, str]) -> str:
+    pieces = re.split(r"\s+(and|or)\s+", condition, flags=re.IGNORECASE)
+    translated = []
+
+    for piece in pieces:
+        lowered = piece.lower()
+        if lowered in {"and", "or"}:
+            translated.append(lowered)
+            continue
+
+        match = re.match(
+            r"^(?P<left>.+?)\s+(?P<operator>is at least|is at most|is greater than|is less than|is not|is|equals|does not equal)\s+(?P<right>.+)$",
+            piece,
+            flags=re.IGNORECASE,
+        )
+        if not match:
+            translated.append(translate_expression(piece, variables))
+            continue
+
+        translated.append(
+            translate_condition(
+                match.group("left"),
+                match.group("operator"),
+                match.group("right"),
+                variables,
+            )
+        )
+
+    return " ".join(translated)
+
+
 def translate_line(line: str, line_number: int, variables: dict[str, str]) -> str:
     raw_stripped = line.strip()
     should_print_assignment = raw_stripped.endswith(",")
@@ -230,6 +358,28 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
 
     if stripped.startswith("//"):
         return f"{indent}#{stripped[2:]}"
+
+    if lowered == "end":
+        return ""
+
+    if lowered == "try:":
+        return f"{indent}try:"
+
+    if lowered == "if error:":
+        return f"{indent}except Exception as error:"
+
+    use_match = USE_RE.match(stripped)
+    if use_match:
+        return ""
+
+    function_def_match = FUNCTION_DEF_RE.match(stripped)
+    if function_def_match:
+        name = remember_name(variables, function_def_match.group("name"))
+        params = [
+            remember_name(variables, parameter)
+            for parameter in split_human_args(function_def_match.group("params") or "")
+        ]
+        return f"{indent}def {name}({', '.join(params)}):"
 
     ask_number_match = ASK_NUMBER_RE.match(stripped)
     if ask_number_match:
@@ -252,6 +402,18 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         ]
         name = remember_name(variables, list_match.group("name"))
         return f"{indent}{name} = [{', '.join(items)}]"
+
+    map_match = MAP_RE.match(stripped)
+    if map_match:
+        entries = []
+        for item in split_human_args(map_match.group("items")):
+            if ":" not in item:
+                raise SyntaxError(f"Line {line_number}: map items must look like \"key\": value")
+            key, value = item.split(":", 1)
+            entries.append(f"{key.strip()}: {translate_expression(value.strip(), variables)}")
+
+        name = remember_name(variables, map_match.group("name"))
+        return f"{indent}{name} = {{{', '.join(entries)}}}"
 
     add_to_list_match = ADD_TO_LIST_RE.match(stripped)
     if add_to_list_match:
@@ -276,6 +438,13 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         value = translate_expression(append_file_match.group("value"), variables)
         path = append_file_match.group("path")
         return f'{indent}Path("{path}").open("a", encoding="utf-8").write(str({value}))'
+
+    split_match = SPLIT_RE.match(stripped)
+    if split_match:
+        value = translate_expression(split_match.group("value"), variables)
+        name = remember_name(variables, split_match.group("name"))
+        separator = split_match.group("separator")
+        return f'{indent}{name} = {value}.split("{separator}")'
 
     if lowered.startswith("say ") or lowered.startswith("show ") or lowered.startswith("print "):
         value = re.sub(r"^(say|show|print)\s+", "", stripped, count=1, flags=re.IGNORECASE)
@@ -307,8 +476,10 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         name = remember_name(variables, change_match.group("name"))
         return f"{indent}{name} = {value}"
 
+    has_compound_logic = bool(re.search(r"\s+(and|or)\s+", stripped, flags=re.IGNORECASE))
+
     if_match = IF_RE.match(stripped)
-    if if_match:
+    if if_match and not has_compound_logic:
         condition = translate_condition(
             if_match.group("left"),
             if_match.group("operator"),
@@ -317,8 +488,26 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         )
         return f"{indent}if {condition}:"
 
+    if lowered.startswith("if ") and lowered.endswith(":"):
+        condition = stripped[3:-1].strip()
+        return f"{indent}if {translate_compound_condition(condition, variables)}:"
+
     if lowered == "otherwise:":
         return f"{indent}else:"
+
+    while_match = WHILE_RE.match(stripped)
+    if while_match and not has_compound_logic:
+        condition = translate_condition(
+            while_match.group("left"),
+            while_match.group("operator"),
+            while_match.group("right"),
+            variables,
+        )
+        return f"{indent}while {condition}:"
+
+    if lowered.startswith("while ") and lowered.endswith(":"):
+        condition = stripped[6:-1].strip()
+        return f"{indent}while {translate_compound_condition(condition, variables)}:"
 
     repeat_match = REPEAT_RE.match(stripped)
     if repeat_match:
@@ -337,10 +526,42 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
     if lowered == "continue":
         return f"{indent}continue"
 
+    function_call_match = FUNCTION_CALL_RE.match(stripped)
+    if function_call_match:
+        name = normalize_name(function_call_match.group("name"))
+        args = [
+            translate_expression(argument, variables)
+            for argument in split_human_args(function_call_match.group("args") or "")
+        ]
+        return f"{indent}{name}({', '.join(args)})"
+
     raise SyntaxError(f"Line {line_number}: HumanLang does not understand: {stripped}")
 
 
-def translate(source: str) -> str:
+def expand_uses(source: str, source_path: Path | None = None, seen: set[Path] | None = None) -> str:
+    seen = seen or set()
+    expanded_lines = []
+    base_dir = source_path.parent if source_path else Path.cwd()
+
+    for line in source.splitlines():
+        match = USE_RE.match(line.strip())
+        if not match:
+            expanded_lines.append(line)
+            continue
+
+        import_path = (base_dir / match.group("path")).resolve()
+        if import_path in seen:
+            continue
+
+        seen.add(import_path)
+        imported_source = read_source_file(import_path)
+        expanded_lines.append(expand_uses(imported_source, import_path, seen))
+
+    return "\n".join(expanded_lines)
+
+
+def translate(source: str, source_path: Path | None = None) -> str:
+    source = expand_uses(source, source_path)
     lines = source.splitlines()
     variables: dict[str, str] = {}
     python_lines = [translate_line(line, index + 1, variables) for index, line in enumerate(lines)]
@@ -361,7 +582,7 @@ def read_source_file(source_path: Path) -> str:
 
 def run_humanlang(source_path: Path) -> int:
     source = read_source_file(source_path)
-    python_code = translate(source)
+    python_code = translate(source, source_path)
     namespace = {"__name__": "__humanlang__", "__file__": str(source_path)}
     exec(compile(python_code, str(source_path), "exec"), namespace)
     return 0
@@ -369,7 +590,7 @@ def run_humanlang(source_path: Path) -> int:
 
 def build_humanlang(source_path: Path, output_path: Path) -> int:
     source = read_source_file(source_path)
-    python_code = translate(source)
+    python_code = translate(source, source_path)
     output_path.write_text(python_code, encoding="utf-8")
     return 0
 
@@ -401,14 +622,14 @@ def run_cli() -> int:
 
     if args.command == "translate":
         source = read_source_file(args.source)
-        print(translate(source), end="")
+        print(translate(source, args.source), end="")
         return 0
 
     if args.legacy_source:
         if args.run:
             return run_humanlang(args.legacy_source)
         source = read_source_file(args.legacy_source)
-        python_code = translate(source)
+        python_code = translate(source, args.legacy_source)
         if args.out:
             args.out.write_text(python_code, encoding="utf-8")
         else:

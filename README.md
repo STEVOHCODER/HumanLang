@@ -121,6 +121,8 @@ humanlang run examples\your_calculator.hl
 humanlang run examples\minimal_calculator.hl
 humanlang run examples\all_functions.hl
 humanlang run examples\data_tools.hl
+humanlang run examples\real_app_basics.hl
+humanlang run examples\modules_demo.hl
 ```
 
 ## Current HumanLang Rules
@@ -174,6 +176,20 @@ humanlang run examples\data_tools.hl
 | `write "Hello" to file "note.txt"` | writes a file |
 | `append " world" to file "note.txt"` | appends to a file |
 | `read file "note.txt" as text` | reads a file |
+| `to greet user with name:` | defines a function |
+| `greet user with "Steven"` | calls a function |
+| `make map "name": "Steven" as user profile` | creates a map |
+| `user profile's "name"` | reads a map value |
+| `if age is at least 18 and status is "active":` | compound condition |
+| `while balance is greater than 0:` | while loop |
+| `lowercase of text` | lowercase text |
+| `uppercase of text` | uppercase text |
+| `replace "a" with "b" in text` | replace text |
+| `split text by "," as parts` | split text into a list |
+| `number of "123"` | convert text to number |
+| `text of 456` | convert value to text |
+| `try:` / `if error:` | handle errors |
+| `use "helpers.hl"` | import another HumanLang file |
 
 See [FUNCTIONS.md](FUNCTIONS.md) for a full example of every current HumanLang feature.
 

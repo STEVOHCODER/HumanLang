@@ -1,0 +1,41 @@
+// HumanLang real app building blocks
+
+to greet user with name:
+    say "Hello " plus name
+end
+
+greet user with "Steven"
+
+make map "name": "Steven", "age": 25 and "status": "active" as user profile
+say user profile's "name"
+
+remember 25 as age
+remember "active" as status
+
+if age is at least 18 and status is "active":
+    say "Access granted"
+otherwise:
+    say "Access denied"
+
+remember 3 as balance
+while balance is greater than 0:
+    say balance
+    change balance to balance minus 1
+
+remember "Apple,Banana,Mango" as fruit text
+calculate lowercase of fruit text as lower fruit text,
+calculate uppercase of fruit text as upper fruit text,
+calculate replace "Apple" with "Orange" in fruit text as changed fruit text,
+split fruit text by "," as fruits
+
+for each fruit in fruits:
+    say fruit
+
+calculate number of "123" as converted number,
+calculate text of 456 as converted text,
+
+try:
+    read file "missing_config.txt" as config text
+if error:
+    say "Could not find the config file"
+

@@ -152,3 +152,68 @@ say note text
 # This is a comment
 // This is also a comment
 ```
+
+## Functions
+
+```humanlang
+to greet user with name:
+    say "Hello " plus name
+end
+
+greet user with "Steven"
+```
+
+## Maps
+
+```humanlang
+make map "name": "Steven", "age": 25 as user profile
+say user profile's "name"
+```
+
+## Compound Logic
+
+```humanlang
+if age is at least 18 and status is "active":
+    say "Access granted"
+```
+
+## While Loops
+
+```humanlang
+while balance is greater than 0:
+    say balance
+    change balance to balance minus 1
+```
+
+## String Tools
+
+```humanlang
+calculate lowercase of text as lower text
+calculate uppercase of text as upper text
+calculate replace "apple" with "orange" in text as changed text
+split text by "," as parts
+```
+
+## Type Conversion
+
+```humanlang
+calculate number of "123" as my value
+calculate integer of "123" as my integer
+calculate text of 456 as my string
+```
+
+## Error Handling
+
+```humanlang
+try:
+    read file "config.txt" as data
+if error:
+    say "Could not find the file"
+```
+
+## Modules
+
+```humanlang
+use "math_helpers.hl"
+double number with 21
+```

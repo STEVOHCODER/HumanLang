@@ -149,6 +149,73 @@ Path("sample.txt").open("a", encoding="utf-8").write(str(" world"))
 file_text = Path("sample.txt").read_text(encoding="utf-8")
 ''')
 
+    def test_translates_real_app_building_blocks(self):
+        source = '''to greet user with name:
+    say "Hello " plus name
+end
+
+greet user with "Steven"
+
+make map "name": "Steven", "age": 25 as user profile
+say user profile's "name"
+
+remember 20 as age
+remember "active" as status
+if age is at least 18 and status is "active":
+    say "Access granted"
+
+remember 2 as balance
+while balance is greater than 0:
+    say balance
+    change balance to balance minus 1
+
+remember "Apple,Orange" as text
+calculate lowercase of text as lower text
+calculate uppercase of text as upper text
+calculate replace "Apple" with "Mango" in text as changed text
+split text by "," as parts
+calculate number of "123" as my value
+calculate text of 456 as my string
+
+try:
+    read file "missing.txt" as data
+if error:
+    say "Could not find the file"
+'''
+
+        self.assertEqual(translate(source), HEADER + '''def greet_user(name):
+    print("Hello " + name)
+
+
+greet_user("Steven")
+
+user_profile = {"name": "Steven", "age": 25}
+print(user_profile["name"])
+
+age = 20
+status = "active"
+if age >= 18 and status == "active":
+    print("Access granted")
+
+balance = 2
+while balance > 0:
+    print(balance)
+    balance = balance - 1
+
+text = "Apple,Orange"
+lower_text = text.lower()
+upper_text = text.upper()
+changed_text = text.replace("Apple", "Mango")
+parts = text.split(",")
+my_value = float("123")
+my_string = str(456)
+
+try:
+    data = Path("missing.txt").read_text(encoding="utf-8")
+except Exception as error:
+    print("Could not find the file")
+''')
+
 
 class SourceFileTests(unittest.TestCase):
     def test_missing_source_file_has_friendly_error(self):

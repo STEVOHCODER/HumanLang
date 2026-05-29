@@ -1,0 +1,5 @@
+use "math_helpers.hl"
+
+say "Using a helper module"
+double number with 21
+
