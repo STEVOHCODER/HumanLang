@@ -85,6 +85,8 @@ calculate 10 percent of first number
 ```humanlang
 if age is at least 18:
     say "Adult"
+otherwise if age is at least 13:
+    say "Teen"
 otherwise:
     say "Minor"
 ```
@@ -100,6 +102,9 @@ is greater than
 is less than
 is at least
 is at most
+contains
+is in
+ignoring case
 ```
 
 ## Repeat
@@ -115,10 +120,16 @@ repeat 3 times:
 make list "apples", "bananas" and "mangoes" as fruits
 create list 1, 2 and 3 as numbers
 add "oranges" to fruits
+remove "bananas" from fruits
+say first item of fruits
+say item 2 of fruits
 calculate length of fruits
 
 for each fruit in fruits:
     say fruit
+
+if "apples" is in fruits:
+    say "Found apples"
 ```
 
 ## Random
@@ -135,6 +146,32 @@ remember current date as today
 remember current time as now
 remember current datetime as timestamp
 say today
+```
+
+## Wait And Exit
+
+```humanlang
+wait 2 seconds
+exit program
+stop everything
+```
+
+## Command Arguments
+
+```powershell
+hl run examples\arguments_demo.hl file.txt
+```
+
+```humanlang
+say argument 1
+say command arguments
+```
+
+## Web
+
+```humanlang
+get from "https://example.com" as response text
+say response text
 ```
 
 ## Files
@@ -192,6 +229,12 @@ calculate lowercase of text as lower text
 calculate uppercase of text as upper text
 calculate replace "apple" with "orange" in text as changed text
 split text by "," as parts
+
+if text contains "error":
+    say "Has error"
+
+if text contains "error" ignoring case:
+    say "Has error"
 ```
 
 ## Type Conversion

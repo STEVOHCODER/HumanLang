@@ -18,10 +18,12 @@ CHANGE_RE = re.compile(rf"^(?:change|set)\s+(?P<name>{HUMAN_NAME})\s+to\s+(?P<va
 REPEAT_RE = re.compile(r"^repeat\s+(?P<count>.+)\s+times:$", re.IGNORECASE)
 LIST_RE = re.compile(rf"^(?:make|create|remember)\s+list\s+(?P<items>.+)\s+as\s+(?P<name>{HUMAN_NAME})$", re.IGNORECASE)
 ADD_TO_LIST_RE = re.compile(r"^add\s+(?P<value>.+)\s+to\s+(?P<name>.+)$", re.IGNORECASE)
+REMOVE_FROM_LIST_RE = re.compile(r"^remove\s+(?P<value>.+)\s+from\s+(?P<name>.+)$", re.IGNORECASE)
 FOR_EACH_RE = re.compile(rf"^for\s+each\s+(?P<item>{HUMAN_NAME})\s+in\s+(?P<items>.+):$", re.IGNORECASE)
 READ_FILE_RE = re.compile(rf'^read\s+file\s+"(?P<path>.+)"\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
 WRITE_FILE_RE = re.compile(r'^write\s+(?P<value>.+)\s+to\s+file\s+"(?P<path>.+)"$', re.IGNORECASE)
 APPEND_FILE_RE = re.compile(r'^append\s+(?P<value>.+)\s+to\s+file\s+"(?P<path>.+)"$', re.IGNORECASE)
+WEB_GET_RE = re.compile(rf'^get\s+from\s+"(?P<url>.+)"\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
 FUNCTION_DEF_RE = re.compile(rf"^to\s+(?P<name>{FUNCTION_NAME})(?:\s+with\s+(?P<params>.+))?:$", re.IGNORECASE)
 FUNCTION_CALL_RE = re.compile(rf"^(?P<name>{FUNCTION_NAME})(?:\s+with\s+(?P<args>.+))?$", re.IGNORECASE)
 MAP_RE = re.compile(rf"^(?:make|create|remember)\s+map\s+(?P<items>.+)\s+as\s+(?P<name>{HUMAN_NAME})$", re.IGNORECASE)
@@ -37,6 +39,7 @@ WHILE_RE = re.compile(
     r"^while\s+(?P<left>.+?)\s+(?P<operator>is at least|is at most|is greater than|is less than|is not|is|equals|does not equal)\s+(?P<right>.+):$",
     re.IGNORECASE,
 )
+WAIT_RE = re.compile(r"^wait\s+(?P<seconds>.+)\s+seconds?$", re.IGNORECASE)
 
 
 MATH_FUNCTIONS = {
@@ -197,6 +200,41 @@ def translate_code_words(expression: str, variables: dict[str, str]) -> str:
     return expression
 
 
+def split_plus_expression(expression: str) -> list[str]:
+    parts = []
+    current = []
+    in_quote = False
+    index = 0
+
+    while index < len(expression):
+        character = expression[index]
+
+        if character == '"' and (index == 0 or expression[index - 1] != "\\"):
+            in_quote = not in_quote
+            current.append(character)
+        elif not in_quote and expression[index : index + 6].lower() == " plus ":
+            parts.append("".join(current).strip())
+            current = []
+            index += 5
+        else:
+            current.append(character)
+
+        index += 1
+
+    if current:
+        parts.append("".join(current).strip())
+
+    return parts
+
+
+def translate_say_expression(expression: str, variables: dict[str, str]) -> str:
+    parts = split_plus_expression(expression)
+    if len(parts) <= 1:
+        return translate_expression(expression, variables)
+
+    return "_human_text(" + ", ".join(translate_expression(part, variables) for part in parts) + ")"
+
+
 def translate_expression(expression: str, variables: dict[str, str]) -> str:
     expression = expression.strip().rstrip(",")
     lowered = expression.lower()
@@ -220,8 +258,32 @@ def translate_expression(expression: str, variables: dict[str, str]) -> str:
     if lowered == "false":
         return "False"
 
+    if lowered == "yes":
+        return "True"
+
+    if lowered == "no":
+        return "False"
+
     if lowered == "nothing":
         return "None"
+
+    if lowered == "command arguments":
+        return "sys.argv[3:]"
+
+    argument_match = re.match(r"^argument\s+(.+)$", expression, flags=re.IGNORECASE)
+    if argument_match:
+        number = translate_expression(argument_match.group(1), variables)
+        return f"sys.argv[int({number}) + 2]"
+
+    first_item_match = re.match(r"^first\s+item\s+of\s+(.+)$", expression, flags=re.IGNORECASE)
+    if first_item_match:
+        return f"{translate_expression(first_item_match.group(1), variables)}[0]"
+
+    item_match = re.match(r"^item\s+(.+?)\s+of\s+(.+)$", expression, flags=re.IGNORECASE)
+    if item_match:
+        number = translate_expression(item_match.group(1), variables)
+        items = translate_expression(item_match.group(2), variables)
+        return f"{items}[int({number}) - 1]"
 
     if lowered.startswith("number of "):
         value = expression[len("number of ") :].strip()
@@ -322,6 +384,41 @@ def translate_compound_condition(condition: str, variables: dict[str, str]) -> s
             translated.append(lowered)
             continue
 
+        contains_ignoring_case_match = re.match(r"^(?P<left>.+?)\s+contains\s+(?P<right>.+?)\s+ignoring\s+case$", piece, flags=re.IGNORECASE)
+        if contains_ignoring_case_match:
+            translated.append(
+                f"str({translate_expression(contains_ignoring_case_match.group('right'), variables)}).lower() in str({translate_expression(contains_ignoring_case_match.group('left'), variables)}).lower()"
+            )
+            continue
+
+        contains_match = re.match(r"^(?P<left>.+?)\s+contains\s+(?P<right>.+)$", piece, flags=re.IGNORECASE)
+        if contains_match:
+            translated.append(
+                f"{translate_expression(contains_match.group('right'), variables)} in {translate_expression(contains_match.group('left'), variables)}"
+            )
+            continue
+
+        not_in_match = re.match(r"^(?P<left>.+?)\s+is\s+not\s+in\s+(?P<right>.+)$", piece, flags=re.IGNORECASE)
+        if not_in_match:
+            translated.append(
+                f"{translate_expression(not_in_match.group('left'), variables)} not in {translate_expression(not_in_match.group('right'), variables)}"
+            )
+            continue
+
+        in_match = re.match(r"^(?P<left>.+?)\s+is\s+in\s+(?P<right>.+)$", piece, flags=re.IGNORECASE)
+        if in_match:
+            translated.append(
+                f"{translate_expression(in_match.group('left'), variables)} in {translate_expression(in_match.group('right'), variables)}"
+            )
+            continue
+
+        ignoring_case_match = re.match(r"^(?P<left>.+?)\s+(equals|is)\s+(?P<right>.+?)\s+ignoring\s+case$", piece, flags=re.IGNORECASE)
+        if ignoring_case_match:
+            translated.append(
+                f"str({translate_expression(ignoring_case_match.group('left'), variables)}).lower() == str({translate_expression(ignoring_case_match.group('right'), variables)}).lower()"
+            )
+            continue
+
         match = re.match(
             r"^(?P<left>.+?)\s+(?P<operator>is at least|is at most|is greater than|is less than|is not|is|equals|does not equal)\s+(?P<right>.+)$",
             piece,
@@ -368,6 +465,10 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
     if lowered == "if error:":
         return f"{indent}except Exception as error:"
 
+    if lowered.startswith("otherwise if ") and lowered.endswith(":"):
+        condition = stripped[len("otherwise if ") : -1].strip()
+        return f"{indent}elif {translate_compound_condition(condition, variables)}:"
+
     use_match = USE_RE.match(stripped)
     if use_match:
         return ""
@@ -385,7 +486,7 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
     if ask_number_match:
         question = ask_number_match.group("question")
         name = remember_name(variables, ask_number_match.group("name"))
-        return f'{indent}{name} = float(input("{question} "))'
+        return f'{indent}{name} = _human_number_input("{question} ")'
 
     ask_match = ASK_RE.match(stripped)
     if ask_match:
@@ -421,6 +522,12 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         name = translate_expression(add_to_list_match.group("name"), variables)
         return f"{indent}{name}.append({value})"
 
+    remove_from_list_match = REMOVE_FROM_LIST_RE.match(stripped)
+    if remove_from_list_match:
+        value = translate_expression(remove_from_list_match.group("value"), variables)
+        name = translate_expression(remove_from_list_match.group("name"), variables)
+        return f"{indent}{name}.remove({value})"
+
     read_file_match = READ_FILE_RE.match(stripped)
     if read_file_match:
         name = remember_name(variables, read_file_match.group("name"))
@@ -439,6 +546,12 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         path = append_file_match.group("path")
         return f'{indent}Path("{path}").open("a", encoding="utf-8").write(str({value}))'
 
+    web_get_match = WEB_GET_RE.match(stripped)
+    if web_get_match:
+        name = remember_name(variables, web_get_match.group("name"))
+        url = web_get_match.group("url")
+        return f'{indent}{name} = urllib.request.urlopen("{url}", timeout=30).read().decode("utf-8")'
+
     split_match = SPLIT_RE.match(stripped)
     if split_match:
         value = translate_expression(split_match.group("value"), variables)
@@ -448,7 +561,7 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
 
     if lowered.startswith("say ") or lowered.startswith("show ") or lowered.startswith("print "):
         value = re.sub(r"^(say|show|print)\s+", "", stripped, count=1, flags=re.IGNORECASE)
-        value = translate_expression(value, variables)
+        value = translate_say_expression(value, variables)
         return f"{indent}print({value})"
 
     remember_match = REMEMBER_RE.match(stripped)
@@ -476,7 +589,12 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         name = remember_name(variables, change_match.group("name"))
         return f"{indent}{name} = {value}"
 
-    has_compound_logic = bool(re.search(r"\s+(and|or)\s+", stripped, flags=re.IGNORECASE))
+    has_compound_logic = bool(
+        re.search(r"\s+(and|or)\s+", stripped, flags=re.IGNORECASE)
+        or re.search(r"\s+contains\s+", stripped, flags=re.IGNORECASE)
+        or re.search(r"\s+is\s+(not\s+)?in\s+", stripped, flags=re.IGNORECASE)
+        or re.search(r"\s+ignoring\s+case", stripped, flags=re.IGNORECASE)
+    )
 
     if_match = IF_RE.match(stripped)
     if if_match and not has_compound_logic:
@@ -519,6 +637,14 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         item = remember_name(variables, for_each_match.group("item"))
         items = translate_expression(for_each_match.group("items"), variables)
         return f"{indent}for {item} in {items}:"
+
+    wait_match = WAIT_RE.match(stripped)
+    if wait_match:
+        seconds = translate_expression(wait_match.group("seconds"), variables)
+        return f"{indent}time.sleep(float({seconds}))"
+
+    if lowered in {"exit program", "stop everything"}:
+        return f"{indent}sys.exit(0)"
 
     if lowered == "stop":
         return f"{indent}break"
@@ -565,7 +691,29 @@ def translate(source: str, source_path: Path | None = None) -> str:
     lines = source.splitlines()
     variables: dict[str, str] = {}
     python_lines = [translate_line(line, index + 1, variables) for index, line in enumerate(lines)]
-    return "import datetime\nimport math\nimport random\nfrom pathlib import Path\n\n" + "\n".join(python_lines) + "\n"
+    header = '''import datetime
+import math
+import random
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+
+def _human_text(*values):
+    return "".join(str(value) for value in values)
+
+
+def _human_number_input(prompt):
+    while True:
+        value = input(prompt)
+        try:
+            return float(value)
+        except ValueError:
+            print("Please enter a valid number.")
+
+'''
+    return header + "\n".join(python_lines) + "\n"
 
 
 def read_source_file(source_path: Path) -> str:
@@ -601,6 +749,7 @@ def run_cli() -> int:
 
     run_parser = subparsers.add_parser("run", help="Run a HumanLang file.")
     run_parser.add_argument("source", type=Path, help="Path to a .hl HumanLang file.")
+    run_parser.add_argument("script_args", nargs=argparse.REMAINDER, help="Arguments passed to the HumanLang program.")
 
     build_parser = subparsers.add_parser("build", help="Translate a HumanLang file into Python.")
     build_parser.add_argument("source", type=Path, help="Path to a .hl HumanLang file.")

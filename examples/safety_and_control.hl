@@ -1,0 +1,35 @@
+say "HumanLang safety and control demo"
+
+remember 85 as score
+remember yes as has permission
+
+if score is at least 90:
+    say "Grade A"
+otherwise if score is at least 80:
+    say "Grade B"
+otherwise:
+    say "Grade C"
+
+if score is at least 80 and has permission is yes:
+    say "Access granted"
+
+make list "apple", "banana" and "mango" as fruits
+say "First fruit: " plus first item of fruits
+say "Second fruit: " plus item 2 of fruits
+
+remove "banana" from fruits
+
+if "apple" is in fruits and "banana" is not in fruits:
+    say "List check passed"
+
+remember "ERROR: disk full" as message
+
+if message contains "disk":
+    say "Message contains disk"
+
+if message contains "error" ignoring case:
+    say "Message contains error ignoring case"
+
+wait 0 seconds
+say "Wait completed"
+

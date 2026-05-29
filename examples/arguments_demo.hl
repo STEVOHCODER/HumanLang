@@ -1,0 +1,6 @@
+say "All arguments:"
+say command arguments
+
+say "First argument:"
+say argument 1
+

@@ -1,0 +1,4 @@
+get from "https://example.com" as response text
+say "Downloaded characters:"
+calculate length of response text
+

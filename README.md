@@ -123,6 +123,8 @@ humanlang run examples\all_functions.hl
 humanlang run examples\data_tools.hl
 humanlang run examples\real_app_basics.hl
 humanlang run examples\modules_demo.hl
+humanlang run examples\safety_and_control.hl
+humanlang run examples\arguments_demo.hl hello
 ```
 
 ## Current HumanLang Rules
@@ -181,7 +183,20 @@ humanlang run examples\modules_demo.hl
 | `make map "name": "Steven" as user profile` | creates a map |
 | `user profile's "name"` | reads a map value |
 | `if age is at least 18 and status is "active":` | compound condition |
+| `otherwise if score is at least 80:` | else-if condition |
 | `while balance is greater than 0:` | while loop |
+| `yes` / `no` | booleans |
+| `first item of fruits` | first list item |
+| `item 2 of fruits` | second list item |
+| `remove "apple" from fruits` | remove from list |
+| `"apple" is in fruits` | list membership |
+| `message contains "error"` | text containment |
+| `message contains "error" ignoring case` | case-insensitive containment |
+| `wait 2 seconds` | pause program |
+| `argument 1` | first command-line argument |
+| `command arguments` | all command-line arguments |
+| `get from "https://example.com" as response` | download web text |
+| `exit program` | stop the program |
 | `lowercase of text` | lowercase text |
 | `uppercase of text` | uppercase text |
 | `replace "a" with "b" in text` | replace text |

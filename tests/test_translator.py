@@ -5,7 +5,28 @@ from tempfile import TemporaryDirectory
 from humanlang import read_source_file, translate
 
 
-HEADER = "import datetime\nimport math\nimport random\nfrom pathlib import Path\n\n"
+HEADER = '''import datetime
+import math
+import random
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+
+def _human_text(*values):
+    return "".join(str(value) for value in values)
+
+
+def _human_number_input(prompt):
+    while True:
+        value = input(prompt)
+        try:
+            return float(value)
+        except ValueError:
+            print("Please enter a valid number.")
+
+'''
 
 
 class TranslatorTests(unittest.TestCase):
@@ -21,7 +42,7 @@ otherwise:
 
         self.assertEqual(translate(source), HEADER + '''name = input("What is your name? ")
 age = 20
-print("Hello " + name)
+print(_human_text("Hello ", name))
 if age >= 18:
     print("You are an adult")
 else:
@@ -36,7 +57,7 @@ calculate the sine of radians of 90 as sine_value
 say root
 '''
 
-        self.assertEqual(translate(source), HEADER + '''number = float(input("Enter a number: "))
+        self.assertEqual(translate(source), HEADER + '''number = _human_number_input("Enter a number: ")
 root = math.sqrt(number)
 squared = number ** 2
 sine_value = math.sin(math.radians(90))
@@ -63,9 +84,9 @@ calculate first number plus second number as addition
 say addition
 '''
 
-        self.assertEqual(translate(source), HEADER + '''first_number = float(input("enter the first number  "))
+        self.assertEqual(translate(source), HEADER + '''first_number = _human_number_input("enter the first number  ")
 
-second_number = float(input("enter the second number  "))
+second_number = _human_number_input("enter the second number  ")
 
 addition = first_number + second_number
 print(addition)
@@ -80,9 +101,9 @@ calculate first_number plus second_number as addition,
 calculate first_number plus second_number
 '''
 
-        self.assertEqual(translate(source), HEADER + '''first_number = float(input("enter the first_number  "))
+        self.assertEqual(translate(source), HEADER + '''first_number = _human_number_input("enter the first_number  ")
 
-second_number = float(input("enter the second_number  "))
+second_number = _human_number_input("enter the second_number  ")
 
 addition = first_number + second_number
 print(addition)
@@ -107,9 +128,9 @@ repeat 2 times:
 
         self.assertEqual(translate(source), HEADER + '''# comment
 user_name = input("Your name? ")
-first_number = float(input("First? "))
-second_number = float(input("Second? "))
-print("Hello " + user_name)
+first_number = _human_number_input("First? ")
+second_number = _human_number_input("Second? ")
+print(_human_text("Hello ", user_name))
 average_value = ((first_number + second_number) / 2)
 biggest_value = max(first_number, second_number)
 smallest_value = min(first_number, second_number)
@@ -184,7 +205,7 @@ if error:
 '''
 
         self.assertEqual(translate(source), HEADER + '''def greet_user(name):
-    print("Hello " + name)
+    print(_human_text("Hello ", name))
 
 
 greet_user("Steven")
@@ -214,6 +235,59 @@ try:
     data = Path("missing.txt").read_text(encoding="utf-8")
 except Exception as error:
     print("Could not find the file")
+''')
+
+    def test_translates_safety_and_real_world_features(self):
+        source = '''remember 85 as score
+remember yes as has permission
+make list "apple", "banana" and "mango" as fruits
+say "Score: " plus score
+say first item of fruits
+say item 2 of fruits
+remove "banana" from fruits
+if score is at least 90:
+    say "A"
+otherwise if score is at least 80:
+    say "B"
+otherwise:
+    say "C"
+if "apple" is in fruits and "mango" is in fruits:
+    say "Fruit found"
+if "banana" is not in fruits:
+    say "No banana"
+if "Error" contains "err" ignoring case:
+    say "Has error"
+wait 1 seconds
+remember argument 1 as file name
+remember command arguments as all arguments
+get from "https://example.com" as response text
+exit program
+'''
+
+        self.assertEqual(translate(source), HEADER + '''score = 85
+has_permission = True
+fruits = ["apple", "banana", "mango"]
+print(_human_text("Score: ", score))
+print(fruits[0])
+print(fruits[int(2) - 1])
+fruits.remove("banana")
+if score >= 90:
+    print("A")
+elif score >= 80:
+    print("B")
+else:
+    print("C")
+if "apple" in fruits and "mango" in fruits:
+    print("Fruit found")
+if "banana" not in fruits:
+    print("No banana")
+if str("err").lower() in str("Error").lower():
+    print("Has error")
+time.sleep(float(1))
+file_name = sys.argv[int(1) + 2]
+all_arguments = sys.argv[3:]
+response_text = urllib.request.urlopen("https://example.com", timeout=30).read().decode("utf-8")
+sys.exit(0)
 ''')
 
 
