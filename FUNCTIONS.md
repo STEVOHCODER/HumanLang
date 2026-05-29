@@ -266,3 +266,16 @@ if error:
 use "math_helpers.hl"
 double number with 21
 ```
+
+## Not Yet Supported
+
+HumanLang is still a minimal command-line scripting language. It does not yet support:
+
+- Desktop GUI apps
+- Mobile apps
+- Web apps with pages
+- Databases
+- Advanced error handling
+- Packages published directly on PyPI
+- Real compiler to Rust, C++, Go, or Rux
+- 3D graphics or game engine features

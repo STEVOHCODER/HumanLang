@@ -232,6 +232,19 @@ humanlang run examples\minimal_checklist.hl
 
 See [FUNCTIONS.md](FUNCTIONS.md) for a full example of every current HumanLang feature.
 
+## Not Yet Supported
+
+HumanLang is still a minimal command-line scripting language. It does not yet support:
+
+- Desktop GUI apps
+- Mobile apps
+- Web apps with pages
+- Databases
+- Advanced error handling
+- Packages published directly on PyPI
+- Real compiler to Rust, C++, Go, or Rux
+- 3D graphics or game engine features
+
 ## Goal
 
 HumanLang should be simple on the surface and powerful underneath:
