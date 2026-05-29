@@ -8,6 +8,7 @@ from humanlang import read_source_file, translate
 HEADER = '''import datetime
 import math
 import random
+import os
 import sys
 import time
 import urllib.request
@@ -241,10 +242,13 @@ except Exception as error:
         source = '''remember 85 as score
 remember yes as has permission
 make list "apple", "banana" and "mango" as fruits
+remember 1 as counter
 say "Score: " plus score
 say first item of fruits
 say item 2 of fruits
 remove "banana" from fruits
+repeat while counter is less than 3:
+    change counter to counter plus 1
 if score is at least 90:
     say "A"
 otherwise if score is at least 80:
@@ -261,16 +265,21 @@ wait 1 seconds
 remember argument 1 as file name
 remember command arguments as all arguments
 get from "https://example.com" as response text
+clear screen
+stop program
 exit program
 '''
 
         self.assertEqual(translate(source), HEADER + '''score = 85
 has_permission = True
 fruits = ["apple", "banana", "mango"]
+counter = 1
 print(_human_text("Score: ", score))
 print(fruits[0])
 print(fruits[int(2) - 1])
 fruits.remove("banana")
+while counter < 3:
+    counter = counter + 1
 if score >= 90:
     print("A")
 elif score >= 80:
@@ -287,6 +296,8 @@ time.sleep(float(1))
 file_name = sys.argv[int(1) + 2]
 all_arguments = sys.argv[3:]
 response_text = urllib.request.urlopen("https://example.com", timeout=30).read().decode("utf-8")
+os.system("cls" if os.name == "nt" else "clear")
+sys.exit(0)
 sys.exit(0)
 ''')
 

@@ -1,0 +1,44 @@
+say "HumanLang minimal checklist"
+
+remember 85 as score
+remember yes as has permission
+remember 1 as counter
+
+if score is at least 90:
+    say "A"
+otherwise if score is at least 80:
+    say "B"
+otherwise:
+    say "C"
+
+repeat while counter is less than 3:
+    say "Counter: " plus counter
+    change counter to counter plus 1
+
+wait 0 seconds
+
+remember true as first flag
+remember false as second flag
+remember no as blocked
+remember nothing as empty value
+
+if has permission is yes and blocked is no:
+    say "Allowed"
+
+make list "apple", "banana" and "mango" as fruits
+
+if "apple" is in fruits:
+    say "Apple is in the list"
+
+remember "system error found" as message
+
+if message contains "error":
+    say "Message contains error"
+
+say item 2 of fruits
+
+clear screen
+say "Screen was cleared"
+
+stop program
+

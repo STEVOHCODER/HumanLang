@@ -20,7 +20,7 @@
     },
     {
       "name": "keyword.control.humanlang",
-      "match": "\\b(if|otherwise|otherwise if|repeat|while|for each|return|stop|continue|try|if error|end|use|exit program|stop everything)\\b"
+      "match": "\\b(if|otherwise|otherwise if|repeat|repeat while|while|for each|return|stop|continue|try|if error|end|use|exit program|stop program|stop everything|clear screen)\\b"
     },
     {
       "name": "keyword.other.humanlang",

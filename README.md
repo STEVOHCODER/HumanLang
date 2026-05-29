@@ -6,6 +6,26 @@ This first version lets you write `.hl` files in English and run them from the c
 
 ## Install
 
+Install directly from GitHub:
+
+```powershell
+python -m pip install git+https://github.com/STEVOHCODER/HumanLang.git
+```
+
+Upgrade to the latest GitHub version:
+
+```powershell
+python -m pip install --upgrade --force-reinstall git+https://github.com/STEVOHCODER/HumanLang.git
+```
+
+Then run:
+
+```powershell
+hl --help
+```
+
+For local development after cloning the repo:
+
 Open PowerShell in this folder and run:
 
 ```powershell
@@ -125,6 +145,7 @@ humanlang run examples\real_app_basics.hl
 humanlang run examples\modules_demo.hl
 humanlang run examples\safety_and_control.hl
 humanlang run examples\arguments_demo.hl hello
+humanlang run examples\minimal_checklist.hl
 ```
 
 ## Current HumanLang Rules
@@ -184,6 +205,7 @@ humanlang run examples\arguments_demo.hl hello
 | `user profile's "name"` | reads a map value |
 | `if age is at least 18 and status is "active":` | compound condition |
 | `otherwise if score is at least 80:` | else-if condition |
+| `repeat while counter is less than 3:` | repeat while condition is true |
 | `while balance is greater than 0:` | while loop |
 | `yes` / `no` | booleans |
 | `first item of fruits` | first list item |
@@ -193,10 +215,12 @@ humanlang run examples\arguments_demo.hl hello
 | `message contains "error"` | text containment |
 | `message contains "error" ignoring case` | case-insensitive containment |
 | `wait 2 seconds` | pause program |
+| `clear screen` | clear the terminal |
 | `argument 1` | first command-line argument |
 | `command arguments` | all command-line arguments |
 | `get from "https://example.com" as response` | download web text |
 | `exit program` | stop the program |
+| `stop program` | stop the program |
 | `lowercase of text` | lowercase text |
 | `uppercase of text` | uppercase text |
 | `replace "a" with "b" in text` | replace text |

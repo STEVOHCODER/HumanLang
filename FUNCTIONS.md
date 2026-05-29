@@ -112,6 +112,10 @@ ignoring case
 ```humanlang
 repeat 3 times:
     say "Hello"
+
+repeat while counter is less than 3:
+    say counter
+    change counter to counter plus 1
 ```
 
 ## Lists
@@ -153,7 +157,9 @@ say today
 ```humanlang
 wait 2 seconds
 exit program
+stop program
 stop everything
+clear screen
 ```
 
 ## Command Arguments

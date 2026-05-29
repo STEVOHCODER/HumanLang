@@ -16,6 +16,7 @@ CALCULATE_RE = re.compile(rf"^calculate\s+(?P<value>.+?)\s+as\s+(?P<name>{HUMAN_
 CALCULATE_PRINT_RE = re.compile(r"^calculate\s+(?P<value>.+)$", re.IGNORECASE)
 CHANGE_RE = re.compile(rf"^(?:change|set)\s+(?P<name>{HUMAN_NAME})\s+to\s+(?P<value>.+)$", re.IGNORECASE)
 REPEAT_RE = re.compile(r"^repeat\s+(?P<count>.+)\s+times:$", re.IGNORECASE)
+REPEAT_WHILE_RE = re.compile(r"^repeat\s+while\s+(?P<condition>.+):$", re.IGNORECASE)
 LIST_RE = re.compile(rf"^(?:make|create|remember)\s+list\s+(?P<items>.+)\s+as\s+(?P<name>{HUMAN_NAME})$", re.IGNORECASE)
 ADD_TO_LIST_RE = re.compile(r"^add\s+(?P<value>.+)\s+to\s+(?P<name>.+)$", re.IGNORECASE)
 REMOVE_FROM_LIST_RE = re.compile(r"^remove\s+(?P<value>.+)\s+from\s+(?P<name>.+)$", re.IGNORECASE)
@@ -613,6 +614,11 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
     if lowered == "otherwise:":
         return f"{indent}else:"
 
+    repeat_while_match = REPEAT_WHILE_RE.match(stripped)
+    if repeat_while_match:
+        condition = repeat_while_match.group("condition").strip()
+        return f"{indent}while {translate_compound_condition(condition, variables)}:"
+
     while_match = WHILE_RE.match(stripped)
     if while_match and not has_compound_logic:
         condition = translate_condition(
@@ -643,8 +649,11 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         seconds = translate_expression(wait_match.group("seconds"), variables)
         return f"{indent}time.sleep(float({seconds}))"
 
-    if lowered in {"exit program", "stop everything"}:
+    if lowered in {"exit program", "stop everything", "stop program"}:
         return f"{indent}sys.exit(0)"
+
+    if lowered == "clear screen":
+        return f'{indent}os.system("cls" if os.name == "nt" else "clear")'
 
     if lowered == "stop":
         return f"{indent}break"
@@ -694,6 +703,7 @@ def translate(source: str, source_path: Path | None = None) -> str:
     header = '''import datetime
 import math
 import random
+import os
 import sys
 import time
 import urllib.request
