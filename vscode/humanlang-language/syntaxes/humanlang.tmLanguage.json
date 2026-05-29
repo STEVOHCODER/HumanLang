@@ -24,7 +24,7 @@
     },
     {
       "name": "keyword.other.humanlang",
-      "match": "\\b(say|show|print|ask|get|number|remember|calculate|change|set|as|and|it|is|equals|plus|minus|times|multiplied by|divided by|modulo|percent of|to the power of|average of|maximum of|minimum of|square root|sine|cosine|tangent|radians|degrees|log|natural log|absolute value|floor|ceiling|factorial|rounded value|pi|at least|at most|greater than|less than)\\b"
+      "match": "\\b(say|show|print|ask|get|number|remember|calculate|change|set|make|create|list|add|read file|write|append|to file|current date|current time|current datetime|random integer|random number|between|as|and|it|is|equals|plus|minus|times|multiplied by|divided by|modulo|percent of|to the power of|average of|maximum of|minimum of|length of|square root|sine|cosine|tangent|radians|degrees|log|natural log|absolute value|floor|ceiling|factorial|rounded value|pi|at least|at most|greater than|less than)\\b"
     },
     {
       "name": "constant.numeric.humanlang",

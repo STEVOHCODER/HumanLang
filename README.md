@@ -120,6 +120,7 @@ humanlang run examples\scientific_calculator.hl
 humanlang run examples\your_calculator.hl
 humanlang run examples\minimal_calculator.hl
 humanlang run examples\all_functions.hl
+humanlang run examples\data_tools.hl
 ```
 
 ## Current HumanLang Rules
@@ -162,6 +163,17 @@ humanlang run examples\all_functions.hl
 | `10 percent of value` | `(10 / 100) * value` |
 | `pi` | `math.pi` |
 | `repeat 3 times:` | `for _ in range(int(3)):` |
+| `make list "a", "b" as items` | `items = ["a", "b"]` |
+| `add "c" to items` | `items.append("c")` |
+| `for each item in items:` | `for item in items:` |
+| `length of items` | `len(items)` |
+| `random integer between 1 and 6` | `random.randint(1, 6)` |
+| `random number between 1 and 2` | `random.uniform(1, 2)` |
+| `current date` | today's date |
+| `current time` | current time |
+| `write "Hello" to file "note.txt"` | writes a file |
+| `append " world" to file "note.txt"` | appends to a file |
+| `read file "note.txt" as text` | reads a file |
 
 See [FUNCTIONS.md](FUNCTIONS.md) for a full example of every current HumanLang feature.
 

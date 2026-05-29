@@ -14,6 +14,12 @@ CALCULATE_RE = re.compile(rf"^calculate\s+(?P<value>.+?)\s+as\s+(?P<name>{HUMAN_
 CALCULATE_PRINT_RE = re.compile(r"^calculate\s+(?P<value>.+)$", re.IGNORECASE)
 CHANGE_RE = re.compile(rf"^(?:change|set)\s+(?P<name>{HUMAN_NAME})\s+to\s+(?P<value>.+)$", re.IGNORECASE)
 REPEAT_RE = re.compile(r"^repeat\s+(?P<count>.+)\s+times:$", re.IGNORECASE)
+LIST_RE = re.compile(rf"^(?:make|create|remember)\s+list\s+(?P<items>.+)\s+as\s+(?P<name>{HUMAN_NAME})$", re.IGNORECASE)
+ADD_TO_LIST_RE = re.compile(r"^add\s+(?P<value>.+)\s+to\s+(?P<name>.+)$", re.IGNORECASE)
+FOR_EACH_RE = re.compile(rf"^for\s+each\s+(?P<item>{HUMAN_NAME})\s+in\s+(?P<items>.+):$", re.IGNORECASE)
+READ_FILE_RE = re.compile(rf'^read\s+file\s+"(?P<path>.+)"\s+as\s+(?P<name>{HUMAN_NAME})$', re.IGNORECASE)
+WRITE_FILE_RE = re.compile(r'^write\s+(?P<value>.+)\s+to\s+file\s+"(?P<path>.+)"$', re.IGNORECASE)
+APPEND_FILE_RE = re.compile(r'^append\s+(?P<value>.+)\s+to\s+file\s+"(?P<path>.+)"$', re.IGNORECASE)
 IF_RE = re.compile(
     r"^if\s+(?P<left>.+?)\s+(?P<operator>is at least|is at most|is greater than|is less than|is not|is|equals|does not equal)\s+(?P<right>.+):$",
     re.IGNORECASE,
@@ -136,6 +142,31 @@ def translate_expression(expression: str, variables: dict[str, str]) -> str:
     expression = expression.strip().rstrip(",")
     lowered = expression.lower()
 
+    if lowered == "current date":
+        return "datetime.date.today().isoformat()"
+
+    if lowered == "current time":
+        return "datetime.datetime.now().strftime('%H:%M:%S')"
+
+    if lowered == "current datetime":
+        return "datetime.datetime.now().isoformat(timespec='seconds')"
+
+    if lowered.startswith("length of "):
+        value = expression[len("length of ") :].strip()
+        return f"len({translate_expression(value, variables)})"
+
+    random_integer = re.match(r"^random\s+integer\s+between\s+(.+?)\s+and\s+(.+)$", expression, flags=re.IGNORECASE)
+    if random_integer:
+        start = translate_expression(random_integer.group(1), variables)
+        end = translate_expression(random_integer.group(2), variables)
+        return f"random.randint(int({start}), int({end}))"
+
+    random_number = re.match(r"^random\s+number\s+between\s+(.+?)\s+and\s+(.+)$", expression, flags=re.IGNORECASE)
+    if random_number:
+        start = translate_expression(random_number.group(1), variables)
+        end = translate_expression(random_number.group(2), variables)
+        return f"random.uniform({start}, {end})"
+
     if lowered.startswith("average of "):
         values = [value.strip() for value in re.split(r"\s+and\s+", expression[len("average of ") :], flags=re.IGNORECASE)]
         translated_values = [translate_expression(value, variables) for value in values if value]
@@ -212,6 +243,40 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         name = remember_name(variables, ask_match.group("name"))
         return f'{indent}{name} = input("{question} ")'
 
+    list_match = LIST_RE.match(stripped)
+    if list_match:
+        items = [
+            translate_expression(item.strip(), variables)
+            for item in re.split(r"\s*,\s*|\s+and\s+", list_match.group("items"), flags=re.IGNORECASE)
+            if item.strip()
+        ]
+        name = remember_name(variables, list_match.group("name"))
+        return f"{indent}{name} = [{', '.join(items)}]"
+
+    add_to_list_match = ADD_TO_LIST_RE.match(stripped)
+    if add_to_list_match:
+        value = translate_expression(add_to_list_match.group("value"), variables)
+        name = translate_expression(add_to_list_match.group("name"), variables)
+        return f"{indent}{name}.append({value})"
+
+    read_file_match = READ_FILE_RE.match(stripped)
+    if read_file_match:
+        name = remember_name(variables, read_file_match.group("name"))
+        path = read_file_match.group("path")
+        return f'{indent}{name} = Path("{path}").read_text(encoding="utf-8")'
+
+    write_file_match = WRITE_FILE_RE.match(stripped)
+    if write_file_match:
+        value = translate_expression(write_file_match.group("value"), variables)
+        path = write_file_match.group("path")
+        return f'{indent}Path("{path}").write_text(str({value}), encoding="utf-8")'
+
+    append_file_match = APPEND_FILE_RE.match(stripped)
+    if append_file_match:
+        value = translate_expression(append_file_match.group("value"), variables)
+        path = append_file_match.group("path")
+        return f'{indent}Path("{path}").open("a", encoding="utf-8").write(str({value}))'
+
     if lowered.startswith("say ") or lowered.startswith("show ") or lowered.startswith("print "):
         value = re.sub(r"^(say|show|print)\s+", "", stripped, count=1, flags=re.IGNORECASE)
         value = translate_expression(value, variables)
@@ -260,6 +325,12 @@ def translate_line(line: str, line_number: int, variables: dict[str, str]) -> st
         count = translate_expression(repeat_match.group("count"), variables)
         return f"{indent}for _ in range(int({count})):"
 
+    for_each_match = FOR_EACH_RE.match(stripped)
+    if for_each_match:
+        item = remember_name(variables, for_each_match.group("item"))
+        items = translate_expression(for_each_match.group("items"), variables)
+        return f"{indent}for {item} in {items}:"
+
     if lowered == "stop":
         return f"{indent}break"
 
@@ -273,7 +344,7 @@ def translate(source: str) -> str:
     lines = source.splitlines()
     variables: dict[str, str] = {}
     python_lines = [translate_line(line, index + 1, variables) for index, line in enumerate(lines)]
-    return "import math\n\n" + "\n".join(python_lines) + "\n"
+    return "import datetime\nimport math\nimport random\nfrom pathlib import Path\n\n" + "\n".join(python_lines) + "\n"
 
 
 def read_source_file(source_path: Path) -> str:

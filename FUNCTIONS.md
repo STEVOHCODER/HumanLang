@@ -109,6 +109,43 @@ repeat 3 times:
     say "Hello"
 ```
 
+## Lists
+
+```humanlang
+make list "apples", "bananas" and "mangoes" as fruits
+create list 1, 2 and 3 as numbers
+add "oranges" to fruits
+calculate length of fruits
+
+for each fruit in fruits:
+    say fruit
+```
+
+## Random
+
+```humanlang
+calculate random integer between 1 and 6
+calculate random number between 1 and 2
+```
+
+## Date And Time
+
+```humanlang
+remember current date as today
+remember current time as now
+remember current datetime as timestamp
+say today
+```
+
+## Files
+
+```humanlang
+write "Hello" to file "note.txt"
+append " world" to file "note.txt"
+read file "note.txt" as note text
+say note text
+```
+
 ## Comments
 
 ```humanlang

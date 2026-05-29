@@ -46,3 +46,24 @@ otherwise:
 say "7. Repeat"
 repeat 3 times:
     say "HumanLang can repeat"
+
+say "8. Lists"
+make list "apples", "bananas" and "mangoes" as fruits
+add "oranges" to fruits
+for each fruit in fruits:
+    say fruit
+calculate length of fruits as fruit count,
+
+say "9. Random, date, and time"
+calculate random integer between 1 and 6 as dice roll,
+calculate random number between 1 and 2 as random value,
+remember current date as today
+remember current time as now
+say today
+say now
+
+say "10. Files"
+write "HumanLang file output" to file "humanlang_output.txt"
+append " works" to file "humanlang_output.txt"
+read file "humanlang_output.txt" as file text
+say file text

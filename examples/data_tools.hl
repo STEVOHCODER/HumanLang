@@ -1,0 +1,28 @@
+say "HumanLang data tools"
+
+make list "apples", "bananas" and "mangoes" as fruits
+add "oranges" to fruits
+
+say "Fruits:"
+for each fruit in fruits:
+    say fruit
+
+calculate length of fruits as fruit count,
+
+say "Random values:"
+calculate random integer between 1 and 6 as dice roll,
+calculate random number between 1 and 2 as random value,
+
+say "Date and time:"
+remember current date as today
+remember current time as now
+say today
+say now
+
+write "HumanLang file output" to file "humanlang_output.txt"
+append " works" to file "humanlang_output.txt"
+read file "humanlang_output.txt" as file text
+
+say "File text:"
+say file text
+

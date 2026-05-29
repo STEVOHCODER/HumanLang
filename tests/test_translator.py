@@ -5,6 +5,9 @@ from tempfile import TemporaryDirectory
 from humanlang import read_source_file, translate
 
 
+HEADER = "import datetime\nimport math\nimport random\nfrom pathlib import Path\n\n"
+
+
 class TranslatorTests(unittest.TestCase):
     def test_translates_basic_program(self):
         source = '''ask "What is your name?" and remember it as name
@@ -16,9 +19,7 @@ otherwise:
     say "You are not an adult"
 '''
 
-        self.assertEqual(translate(source), '''import math
-
-name = input("What is your name? ")
+        self.assertEqual(translate(source), HEADER + '''name = input("What is your name? ")
 age = 20
 print("Hello " + name)
 if age >= 18:
@@ -35,9 +36,7 @@ calculate the sine of radians of 90 as sine_value
 say root
 '''
 
-        self.assertEqual(translate(source), '''import math
-
-number = float(input("Enter a number: "))
+        self.assertEqual(translate(source), HEADER + '''number = float(input("Enter a number: "))
 root = math.sqrt(number)
 squared = number ** 2
 sine_value = math.sin(math.radians(90))
@@ -50,9 +49,7 @@ say "2 to the power of 10:"
 say pi
 '''
 
-        self.assertEqual(translate(source), '''import math
-
-print("Pi is:")
+        self.assertEqual(translate(source), HEADER + '''print("Pi is:")
 print("2 to the power of 10:")
 print(math.pi)
 ''')
@@ -66,9 +63,7 @@ calculate first number plus second number as addition
 say addition
 '''
 
-        self.assertEqual(translate(source), '''import math
-
-first_number = float(input("enter the first number  "))
+        self.assertEqual(translate(source), HEADER + '''first_number = float(input("enter the first number  "))
 
 second_number = float(input("enter the second number  "))
 
@@ -85,9 +80,7 @@ calculate first_number plus second_number as addition,
 calculate first_number plus second_number
 '''
 
-        self.assertEqual(translate(source), '''import math
-
-first_number = float(input("enter the first_number  "))
+        self.assertEqual(translate(source), HEADER + '''first_number = float(input("enter the first_number  "))
 
 second_number = float(input("enter the second_number  "))
 
@@ -112,9 +105,7 @@ repeat 2 times:
     print average value
 '''
 
-        self.assertEqual(translate(source), '''import math
-
-# comment
+        self.assertEqual(translate(source), HEADER + '''# comment
 user_name = input("Your name? ")
 first_number = float(input("First? "))
 second_number = float(input("Second? "))
@@ -127,6 +118,35 @@ factorial_value = math.factorial(5)
 rounded_value = round(4.7)
 for _ in range(int(2)):
     print(average_value)
+''')
+
+    def test_translates_lists_files_random_and_dates(self):
+        source = '''make list "apples", "bananas" and "mangoes" as fruits
+add "oranges" to fruits
+for each fruit in fruits:
+    say fruit
+calculate length of fruits as fruit count
+calculate random integer between 1 and 6 as dice roll
+calculate random number between 1 and 2 as random value
+remember current date as today
+remember current time as now
+write "hello" to file "sample.txt"
+append " world" to file "sample.txt"
+read file "sample.txt" as file text
+'''
+
+        self.assertEqual(translate(source), HEADER + '''fruits = ["apples", "bananas", "mangoes"]
+fruits.append("oranges")
+for fruit in fruits:
+    print(fruit)
+fruit_count = len(fruits)
+dice_roll = random.randint(int(1), int(6))
+random_value = random.uniform(1, 2)
+today = datetime.date.today().isoformat()
+now = datetime.datetime.now().strftime('%H:%M:%S')
+Path("sample.txt").write_text(str("hello"), encoding="utf-8")
+Path("sample.txt").open("a", encoding="utf-8").write(str(" world"))
+file_text = Path("sample.txt").read_text(encoding="utf-8")
 ''')
 
 
